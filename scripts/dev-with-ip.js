@@ -31,56 +31,23 @@ if (localIP) {
 }
 
 // Démarrer Next.js avec l'option -H 0.0.0.0
-// Utiliser le chemin absolu vers le binaire next
-const path = require('path');
-const fs = require('fs');
+// Utiliser npx pour une compatibilité cross-platform
+const platform = os.platform();
 
-// Essayer plusieurs chemins possibles pour le binaire next
-const possiblePaths = [
-  path.join(__dirname, '..', 'node_modules', '.bin', 'next'),
-  path.join(__dirname, '..', 'node_modules', 'next', 'dist', 'bin', 'next'),
-];
+// Sur Windows, utiliser npx pour éviter les problèmes avec les scripts shell
+// Sur Unix, on peut aussi utiliser npx pour la simplicité
+const nextProcess = spawn('npx', ['next', 'dev', '-H', '0.0.0.0'], {
+  stdio: 'inherit',
+  shell: platform === 'win32', // Utiliser shell sur Windows
+  env: process.env
+});
 
-let nextBin = null;
-for (const binPath of possiblePaths) {
-  if (fs.existsSync(binPath)) {
-    nextBin = binPath;
-    break;
-  }
-}
+nextProcess.on('error', (error) => {
+  console.error('❌ Erreur lors du démarrage:', error);
+  process.exit(1);
+});
 
-// Si aucun chemin n'est trouvé, utiliser npx comme fallback
-if (!nextBin) {
-  console.log('⚠️  Binaire next non trouvé, utilisation de npx...\n');
-  nextBin = 'npx';
-  const nextProcess = spawn(nextBin, ['next', 'dev', '-H', '0.0.0.0'], {
-    stdio: 'inherit',
-    shell: true,
-    env: process.env
-  });
-  
-  nextProcess.on('error', (error) => {
-    console.error('❌ Erreur lors du démarrage:', error);
-    process.exit(1);
-  });
-  
-  nextProcess.on('exit', (code) => {
-    process.exit(code || 0);
-  });
-} else {
-  const nextProcess = spawn('node', [nextBin, 'dev', '-H', '0.0.0.0'], {
-    stdio: 'inherit',
-    shell: false,
-    env: process.env
-  });
-  
-  nextProcess.on('error', (error) => {
-    console.error('❌ Erreur lors du démarrage:', error);
-    process.exit(1);
-  });
-  
-  nextProcess.on('exit', (code) => {
-    process.exit(code || 0);
-  });
-}
+nextProcess.on('exit', (code) => {
+  process.exit(code || 0);
+});
 

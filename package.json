@@ -14,7 +14,7 @@
     "test:watch": "jest --watch",
     "docker:dev": "docker-compose -f docker-compose.dev.yml up",
     "docker:dev:build": "docker-compose -f docker-compose.dev.yml up --build",
-    "start:dev": "./scripts/start-dev.sh",
+    "start:dev": "node scripts/start-dev.js",
     "start:docker:prod": "./scripts/start-docker-prod.sh",
     "start:docker:dev": "./scripts/start-docker-dev.sh"
   },
