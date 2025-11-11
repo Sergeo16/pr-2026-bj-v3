@@ -12,28 +12,11 @@ Plateforme complète de vote avec tableau de bord en temps réel, ultra-scalable
 
 ## 📋 Prérequis
 
-- **Node.js 20+** (pour le développement local uniquement)
-- **Docker Desktop** (recommandé pour toutes les méthodes)
-  - Windows : [Docker Desktop pour Windows (AMD64)](https://www.docker.com/products/docker-desktop/)
-  - macOS : [Docker Desktop pour Mac](https://www.docker.com/products/docker-desktop/)
-  - Linux : [Docker Engine](https://docs.docker.com/engine/install/)
-- **npm** ou **yarn**
-
-**💡 Note Windows :** Les scripts sont compatibles avec Windows (PowerShell), macOS et Linux. Le script `npm run start:dev` détecte automatiquement votre système d'exploitation.
+- Node.js 20+
+- PostgreSQL 15+ (ou Docker)
+- npm ou yarn
 
 ## 🚀 Démarrage Rapide (Après le démarrage de l'ordinateur)
-
-### ⚡ Choix Rapide de la Méthode
-
-| Besoin | Commande | Description |
-|--------|----------|-------------|
-| 🚀 **Développement quotidien** | `npm run start:dev` | Next.js local + DB Docker (le plus rapide) |
-| 🐳 **Développement avec isolation** | `npm run docker:dev` | Tout dans Docker avec hot-reload |
-| 🏭 **Test production** | `npm run start:docker:prod` | Environnement identique à la production |
-
-**💡 Recommandation :** Pour le développement quotidien, utilisez `npm run start:dev`. Pour tester l'environnement Docker, utilisez `npm run docker:dev`.
-
----
 
 ### 📊 Comparaison des Méthodes de Démarrage
 
@@ -134,32 +117,9 @@ Plateforme complète de vote avec tableau de bord en temps réel, ultra-scalable
 
 ### Scénario 1: Développement Local (Recommandé pour le développement)
 
-**💡 Méthode Simple (Recommandée) :**
-Utilisez le script automatique qui gère tout pour vous :
-
-```bash
-npm run start:dev
-```
-
-Ce script va automatiquement :
-- ✅ Vérifier que Docker est démarré
-- ✅ Créer/démarrer le conteneur PostgreSQL si nécessaire
-- ✅ Vérifier et exécuter les migrations/seed si nécessaire
-- ✅ Démarrer Next.js en mode développement
-
-**📝 Note :** Ce script fonctionne sur Windows, macOS et Linux automatiquement.
-
----
-
-**🔧 Méthode Manuelle (Si vous préférez contrôler chaque étape) :**
-
 **Étape 1 : Ouvrir le terminal et naviguer vers le projet**
 ```bash
-# Windows (PowerShell ou Git Bash)
-cd C:\ss\dev\pr-2026-bj
-
-# macOS/Linux
-cd /chemin/vers/pr-2026-bj
+cd /Users/Sergeo/Documents/dev/pr_2026_v2
 ```
 
 **Étape 2 : Vérifier que Docker est démarré**
@@ -185,22 +145,15 @@ docker start pr2026_db
 
 **Étape 4 : Vérifier que la base de données est prête**
 ```bash
-# Windows (PowerShell)
-docker ps | Select-String pr2026_db
-
-# macOS/Linux
+# Attendre quelques secondes, puis vérifier
 docker ps | grep pr2026_db
 ```
 
-**Étape 5 : Exécuter les migrations et seed (première fois uniquement)**
-```bash
-npm run migrate
-npm run seed
-```
-
-**Étape 6 : Démarrer l'application Next.js**
+**Étape 5 : Démarrer l'application Next.js**
 ```bash
 npm run dev
+# OU utiliser le script d'aide
+npm run start:dev
 ```
 
 **Résultat attendu :**
@@ -221,20 +174,9 @@ npm run dev
 
 ### Scénario 2: Docker Compose - Production (Recommandé pour la production)
 
-**💡 Méthode Simple :**
-```bash
-npm run start:docker:prod
-```
-
-**🔧 Méthode Manuelle :**
-
 **Étape 1 : Ouvrir le terminal et naviguer vers le projet**
 ```bash
-# Windows (PowerShell ou Git Bash)
-cd C:\ss\dev\pr-2026-bj
-
-# macOS/Linux
-cd /chemin/vers/pr-2026-bj
+cd /Users/Sergeo/Documents/dev/pr_2026_v2
 ```
 
 **Étape 2 : Vérifier que Docker est démarré**
@@ -245,6 +187,8 @@ docker ps
 **Étape 3 : Démarrer tous les services**
 ```bash
 docker-compose up -d
+# OU utiliser le script d'aide
+npm run start:docker:prod
 ```
 
 **Étape 4 : Vérifier que les conteneurs sont démarrés**
@@ -256,44 +200,30 @@ Vous devriez voir :
 - `pr2026_db` - Status: Up (healthy)
 - `pr2026_web` - Status: Up
 
-**Étape 5 : Exécuter les migrations et seed (première fois uniquement)**
+**Étape 5 : Vérifier les logs (optionnel)**
+```bash
+docker-compose logs web
+```
+
+**Étape 6 : Accéder à l'application**
+- Ouvrir votre navigateur sur : `http://localhost:3000`
+- Pour accéder depuis un autre terminal du réseau : `http://VOTRE_IP_LOCALE:3000`
+
+**Note :** Si c'est la première fois, vous devrez exécuter les migrations et le seed :
 ```bash
 docker-compose exec web npm run migrate
 docker-compose exec web npm run seed
 ```
 
-**Étape 6 : Vérifier les logs (optionnel)**
-```bash
-docker-compose logs web
-```
-
-**Étape 7 : Accéder à l'application**
-- Ouvrir votre navigateur sur : `http://localhost:3000`
-- Pour accéder depuis un autre terminal du réseau : `http://VOTRE_IP_LOCALE:3000`
-
-**⚠️ Important :**
-- Les modifications de code nécessitent un rebuild : `docker-compose up -d --build`
-- Pas de hot-reload en mode production
-- Environnement identique à la production
+**Note :** Pour réinitialiser la base de données avec les nouvelles données du fichier `BENIN_centres_vote_complet.json`, consultez la section [Réinitialiser la base de données avec les nouvelles données](#réinitialiser-la-base-de-données-avec-les-nouvelles-données) dans le dépannage.
 
 ---
 
 ### Scénario 3: Docker Compose - Développement (Avec hot-reload)
 
-**💡 Méthode Simple (Recommandée) :**
-```bash
-npm run docker:dev
-```
-
-**🔧 Méthode Manuelle :**
-
 **Étape 1 : Ouvrir le terminal et naviguer vers le projet**
 ```bash
-# Windows (PowerShell ou Git Bash)
-cd C:\ss\dev\pr-2026-bj
-
-# macOS/Linux
-cd /chemin/vers/pr-2026-bj
+cd /Users/Sergeo/Documents/dev/pr_2026_v2
 ```
 
 **Étape 2 : Vérifier que Docker est démarré**
@@ -303,14 +233,11 @@ docker ps
 
 **Étape 3 : Démarrer tous les services en mode développement**
 ```bash
-# Méthode recommandée (avec script npm)
 npm run docker:dev
-
-# OU directement avec docker-compose
+# OU utiliser le script d'aide
+npm run start:docker:dev
+# ou directement
 docker-compose -f docker-compose.dev.yml up
-
-# OU en arrière-plan
-docker-compose -f docker-compose.dev.yml up -d
 ```
 
 **Étape 4 : Attendre que les services démarrent**
@@ -319,28 +246,11 @@ Vous verrez les logs en temps réel. Attendez que vous voyiez :
 pr2026_web_dev  | ✓ Ready in Xs
 ```
 
-**Étape 5 : Exécuter les migrations et seed (première fois uniquement)**
-```bash
-# Depuis votre machine hôte (pas dans le conteneur)
-npm run migrate
-npm run seed
-
-# OU depuis le conteneur
-docker-compose -f docker-compose.dev.yml exec web npm run migrate
-docker-compose -f docker-compose.dev.yml exec web npm run seed
-```
-
-**Étape 6 : Accéder à l'application**
+**Étape 5 : Accéder à l'application**
 - Ouvrir votre navigateur sur : `http://localhost:3000`
 - Pour accéder depuis un autre terminal du réseau : `http://VOTRE_IP_LOCALE:3000`
 
-**✅ Avantages :**
-- Hot-reload fonctionnel (modifications de code visibles immédiatement)
-- Isolation complète (comme en production)
-- Pas besoin de Node.js installé localement
-- Environnement reproductible
-
-**⚠️ Note :** Les modifications de code sont automatiquement reflétées grâce aux volumes montés et au hot-reload de Next.js.
+**Note :** Les modifications de code sont automatiquement reflétées grâce au hot-reload.
 
 ---
 
@@ -384,17 +294,14 @@ docker restart pr2026_db
 
 ### Trouver votre IP locale (pour l'accès réseau)
 ```bash
-# Windows (PowerShell)
-ipconfig | Select-String "IPv4"
-
-# Windows (Git Bash)
-ipconfig | grep "IPv4"
-
 # macOS/Linux
 ifconfig | grep "inet " | grep -v 127.0.0.1
 
 # ou plus simple
 hostname -I
+
+# Windows
+ipconfig
 ```
 
 ---
@@ -410,22 +317,16 @@ npm install
 
 2. **Configurer les variables d'environnement**:
 ```bash
-# Windows (PowerShell)
-# Le fichier .env doit être créé manuellement ou utilisez le script automatique
-
-# macOS/Linux
 cp .env.example .env
 ```
 
-Créer le fichier `.env` à la racine du projet avec :
+Éditer `.env` et configurer:
 ```env
 DATABASE_URL=postgresql://pr2026_user:pr2026_password@localhost:5432/pr2026_db
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 RATE_LIMIT_MAX_REQUESTS=100
 RATE_LIMIT_WINDOW_MS=60000
 ```
-
-**💡 Astuce :** Le script `npm run start:dev` crée automatiquement le fichier `.env` s'il n'existe pas.
 
 3. **Démarrer PostgreSQL** (si pas déjà démarré):
 ```bash
@@ -451,10 +352,6 @@ npm run seed
 
 6. **Démarrer le serveur de développement**:
 ```bash
-# Méthode simple (recommandée)
-npm run start:dev
-
-# OU méthode manuelle
 npm run dev
 ```
 
@@ -489,49 +386,27 @@ docker-compose exec web npm run seed
 
 1. **Démarrer tous les services en mode développement**:
 ```bash
-# Méthode recommandée
 npm run docker:dev
-
-# OU directement
+# ou
 docker-compose -f docker-compose.dev.yml up
-
-# OU en arrière-plan
-docker-compose -f docker-compose.dev.yml up -d
 ```
 
-2. **Exécuter les migrations** (première fois uniquement):
+2. **Exécuter les migrations** (depuis votre machine hôte):
 ```bash
-# Depuis votre machine hôte (recommandé)
 npm run migrate
 npm run seed
-
-# OU depuis le conteneur
-docker-compose -f docker-compose.dev.yml exec web npm run migrate
-docker-compose -f docker-compose.dev.yml exec web npm run seed
 ```
 
 3. **Accéder à l'application**:
    - Web: [http://localhost:3000](http://localhost:3000) ou http://VOTRE_IP_LOCALE:3000
-   - Les modifications de code sont reflétées automatiquement grâce aux volumes montés et au hot-reload
-
-**✅ Avantages de cette méthode :**
-- Isolation complète (comme en production)
-- Hot-reload fonctionnel
-- Pas besoin de Node.js installé localement
-- Environnement reproductible
+   - Les modifications de code sont reflétées automatiquement grâce aux volumes montés
 
 ## 📜 Scripts Disponibles
 
 ### Scripts de Démarrage (Recommandés)
 - `npm run start:dev` - Démarrage automatique en mode développement local (démarre la DB + Next.js)
-  - ✅ Fonctionne sur Windows, macOS et Linux
-  - ✅ Gère automatiquement la création/démarrage de la DB
-  - ✅ Vérifie et exécute les migrations/seed si nécessaire
-- `npm run docker:dev` - Démarrage avec Docker Compose (développement avec hot-reload)
-  - ✅ Isolation complète
-  - ✅ Hot-reload fonctionnel
-- `npm run start:docker:prod` - Démarrage avec Docker Compose (production)
-  - ✅ Environnement identique à la production
+- `npm run start:docker:prod` - Démarrage automatique avec Docker Compose (production)
+- `npm run start:docker:dev` - Démarrage automatique avec Docker Compose (développement avec hot-reload)
 
 ### Scripts de Développement
 - `npm run dev` - Démarrer le serveur de développement (affiche automatiquement l'IP réseau)
@@ -703,6 +578,167 @@ RATE_LIMIT_MAX_REQUESTS=200
 RATE_LIMIT_WINDOW_MS=60000
 ```
 
+### Réinitialiser la base de données avec les nouvelles données
+
+Si vous avez mis à jour le fichier `data/BENIN_centres_vote_complet.json` et que vous voulez réinitialiser complètement la base de données pour prendre en compte les nouvelles données, suivez les instructions ci-dessous selon votre environnement.
+
+#### ⚠️ Attention
+**La réinitialisation supprime toutes les données existantes** (départements, communes, arrondissements, villages, centres et votes). Si vous avez des votes enregistrés que vous voulez conserver, faites une sauvegarde avant.
+
+#### Pour Docker Compose (Production)
+
+**Option 1 : Réinitialisation complète (recommandée)**
+
+```bash
+# 1. Arrêter tous les conteneurs
+docker-compose down
+
+# 2. Supprimer le volume de données PostgreSQL
+# Sur Windows (PowerShell)
+docker volume rm pr_2026_v2_postgres_data
+
+# Sur macOS/Linux
+docker volume rm pr_2026_v2_postgres_data
+
+# 3. Rebuild et démarrer (le script fait tout automatiquement)
+npm run start:docker:prod
+
+# 4. Attendre que les conteneurs soient prêts (10-15 secondes)
+# Sur Windows (PowerShell)
+timeout /t 15
+
+# Sur macOS/Linux
+sleep 15
+
+# 5. Exécuter les migrations
+docker-compose exec web npm run migrate
+
+# 6. Exécuter le seed avec les nouvelles données
+docker-compose exec web npm run seed
+```
+
+**Option 2 : Réinitialisation sans supprimer le volume (plus rapide)**
+
+Le script de seed supprime déjà toutes les données avant de réinsérer, donc vous pouvez simplement :
+
+```bash
+# 1. S'assurer que les conteneurs sont démarrés
+docker-compose ps
+
+# 2. Si les conteneurs ne sont pas démarrés
+docker-compose up -d
+
+# 3. Attendre que les conteneurs soient prêts
+# Sur Windows (PowerShell)
+timeout /t 10
+
+# Sur macOS/Linux
+sleep 10
+
+# 4. Exécuter le seed (supprime et réinsère toutes les données)
+docker-compose exec web npm run seed
+```
+
+#### Pour Développement Local
+
+```bash
+# 1. Arrêter la base de données
+docker stop pr2026_db
+
+# 2. Supprimer le conteneur et son volume
+docker rm -v pr2026_db
+
+# 3. Recréer la base de données
+# Sur Windows (PowerShell)
+docker run -d --name pr2026_db -e POSTGRES_USER=pr2026_user -e POSTGRES_PASSWORD=pr2026_password -e POSTGRES_DB=pr2026_db -p 5432:5432 postgres:15-alpine
+
+# Sur macOS/Linux
+docker run -d \
+  --name pr2026_db \
+  -e POSTGRES_USER=pr2026_user \
+  -e POSTGRES_PASSWORD=pr2026_password \
+  -e POSTGRES_DB=pr2026_db \
+  -p 5432:5432 \
+  postgres:15-alpine
+
+# 4. Attendre que la base soit prête
+# Sur Windows (PowerShell)
+timeout /t 5
+
+# Sur macOS/Linux
+sleep 5
+
+# 5. Exécuter les migrations
+npm run migrate
+
+# 6. Exécuter le seed avec les nouvelles données
+npm run seed
+```
+
+#### Pour Docker Compose (Développement)
+
+```bash
+# 1. Arrêter les conteneurs
+docker-compose -f docker-compose.dev.yml down
+
+# 2. Supprimer le volume de données
+# Sur Windows (PowerShell)
+docker volume rm pr_2026_v2_postgres_data_dev
+
+# Sur macOS/Linux
+docker volume rm pr_2026_v2_postgres_data_dev
+
+# 3. Redémarrer les services
+docker-compose -f docker-compose.dev.yml up -d
+
+# 4. Attendre que les conteneurs soient prêts
+# Sur Windows (PowerShell)
+timeout /t 15
+
+# Sur macOS/Linux
+sleep 15
+
+# 5. Exécuter les migrations
+docker-compose -f docker-compose.dev.yml exec web npm run migrate
+
+# 6. Exécuter le seed avec les nouvelles données
+docker-compose -f docker-compose.dev.yml exec web npm run seed
+```
+
+#### Sauvegarder la base de données avant réinitialisation
+
+Si vous voulez sauvegarder vos données avant de réinitialiser :
+
+**Pour Docker Compose (Production) :**
+```bash
+# Sur Windows (PowerShell)
+docker-compose exec db pg_dump -U pr2026_user pr2026_db > backup_$(Get-Date -Format "yyyyMMdd_HHmmss").sql
+
+# Sur macOS/Linux
+docker-compose exec db pg_dump -U pr2026_user pr2026_db > backup_$(date +%Y%m%d_%H%M%S).sql
+```
+
+**Pour Développement Local :**
+```bash
+# Sur Windows (PowerShell)
+docker exec pr2026_db pg_dump -U pr2026_user pr2026_db > backup_$(Get-Date -Format "yyyyMMdd_HHmmss").sql
+
+# Sur macOS/Linux
+docker exec pr2026_db pg_dump -U pr2026_user pr2026_db > backup_$(date +%Y%m%d_%H%M%S).sql
+```
+
+#### Restaurer une sauvegarde
+
+```bash
+# Sur Windows (PowerShell)
+docker-compose exec -T db psql -U pr2026_user pr2026_db < backup_YYYYMMDD_HHMMSS.sql
+
+# Sur macOS/Linux
+docker-compose exec -T db psql -U pr2026_user pr2026_db < backup_YYYYMMDD_HHMMSS.sql
+```
+
+---
+
 ## 📝 Notes
 
 - Le script de seed est **idempotent** (peut être exécuté plusieurs fois)
@@ -738,3 +774,5 @@ git branch -M main
 git push -u origin main
 ```
 
+
+# pr-2026-bj

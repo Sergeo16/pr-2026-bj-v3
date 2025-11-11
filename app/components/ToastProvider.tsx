@@ -16,7 +16,6 @@ export default function ToastProvider() {
       draggable
       pauseOnHover
       theme="light"
-      enableMultiContainer={false}
       limit={3}
     />
   );
