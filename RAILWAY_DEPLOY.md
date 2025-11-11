@@ -198,7 +198,11 @@ railway run npm run migrate
 
 5. Exécutez le seed :
 ```bash
+# Spécifiez explicitement le service web
 railway run --service <nom-du-service-web> npm run seed
+
+# Ou si vous avez lié le service web, simplement :
+railway run npm run seed
 ```
 
 **⚠️ Important** : 
@@ -206,18 +210,57 @@ railway run --service <nom-du-service-web> npm run seed
 - Si vous avez lié le service Postgres par erreur, utilisez `--service` pour spécifier le service web
 - Les migrations doivent s'exécuter dans le conteneur web où `DATABASE_URL` pointe vers le service PostgreSQL interne
 
-#### Option 2 : Via Railway Dashboard (Plus Simple - Recommandé)
+#### Option 2 : Via Railway Dashboard (Plus Simple - Recommandé ⭐)
 
-1. Allez dans votre **service web** (pas le service Postgres)
-2. Cliquez sur **"Deployments"** → Sélectionnez le dernier déploiement
-3. Cliquez sur **"View Logs"** ou **"Shell"** / **"Run Command"**
-4. Exécutez les commandes dans le terminal intégré :
-```bash
-npm run migrate
-npm run seed
-```
+**Cette méthode est la plus simple et la plus fiable !**
 
-**✅ Cette méthode est recommandée** car elle exécute les commandes directement dans le conteneur web où toutes les variables d'environnement sont correctement configurées.
+**Étapes détaillées** :
+
+1. **Ouvrez Railway Dashboard** :
+   - Allez sur [railway.app](https://railway.app)
+   - Connectez-vous si nécessaire
+
+2. **Sélectionnez votre projet** :
+   - Cliquez sur votre projet `fortunate-enchantment`
+   - Vous verrez vos services (Postgres et votre service web)
+
+3. **Ouvrez votre service web** :
+   - ⚠️ **IMPORTANT** : Cliquez sur le **service web** (celui qui contient votre application Next.js), PAS sur le service Postgres
+   - Le service web devrait avoir un nom comme `web`, `app`, ou le nom de votre dépôt GitHub
+
+4. **Accédez au terminal** :
+   - Cliquez sur l'onglet **"Deployments"** en haut
+   - Cliquez sur le **dernier déploiement** (celui qui est actif/running)
+   - Vous verrez plusieurs onglets : **"Logs"**, **"Metrics"**, **"Shell"**
+   - Cliquez sur **"Shell"** (ou **"Run Command"** selon votre version de Railway)
+
+5. **Exécutez les migrations** :
+   - Un terminal intégré s'ouvre
+   - Tapez la commande suivante et appuyez sur Entrée :
+   ```bash
+   npm run migrate
+   ```
+   - Attendez que la migration se termine (vous devriez voir "✅ Migrations terminées avec succès")
+
+6. **Exécutez le seed** :
+   - Dans le même terminal, tapez :
+   ```bash
+   npm run seed
+   ```
+   - Attendez que le seed se termine (vous devriez voir les statistiques des données chargées)
+
+**✅ Avantages de cette méthode** :
+- ✅ Pas besoin de Railway CLI
+- ✅ Les commandes s'exécutent directement dans le conteneur web
+- ✅ Toutes les variables d'environnement sont déjà configurées
+- ✅ Vous voyez les résultats en temps réel
+- ✅ Pas de problème de connexion réseau
+
+**📸 Aide visuelle** :
+Si vous ne trouvez pas l'onglet "Shell", cherchez :
+- Un bouton **"Terminal"** ou **"Console"**
+- Un bouton **"Run Command"**
+- Un onglet **"Shell"** dans les détails du déploiement
 
 ### Étape 6 : Configurer le Domaine Public
 
@@ -313,6 +356,133 @@ Si vous obtenez cette erreur lors de l'exécution de `railway run npm run migrat
    # Sélectionnez l'environnement (production)
    # ⚠️ IMPORTANT : Sélectionnez le service WEB (pas Postgres) ou appuyez sur ESC
    ```
+
+### Erreur "DATABASE_URL environment variable is not set"
+
+Si vous voyez cette erreur dans les logs Railway :
+
+**Cause** : La variable `DATABASE_URL` n'est pas définie dans les variables d'environnement du service web.
+
+**Solution immédiate** :
+
+1. **Allez dans Railway Dashboard** :
+   - Ouvrez votre projet Railway
+   - Cliquez sur votre **service web** (pas Postgres)
+
+2. **Ouvrez les Variables** :
+   - Cliquez sur l'onglet **"Variables"** en haut
+   - Vérifiez si `DATABASE_URL` existe
+
+3. **Ajoutez ou corrigez DATABASE_URL** :
+   - Si `DATABASE_URL` n'existe pas, cliquez sur **"New Variable"**
+   - Nom : `DATABASE_URL`
+   - Valeur : `${{Postgres.DATABASE_URL}}` (remplacez `Postgres` par le nom exact de votre service PostgreSQL dans Railway)
+   - Cliquez sur **"Add"** ou **"Save"**
+
+4. **Vérifiez le nom du service PostgreSQL** :
+   - Dans votre projet Railway, regardez le nom exact de votre service PostgreSQL
+   - Il peut s'appeler `Postgres`, `PostgreSQL`, `postgres`, ou un autre nom
+   - Utilisez ce nom exact dans la référence : `${{NomExactDuService.DATABASE_URL}}`
+
+5. **Redéployez** :
+   - Railway redéploiera automatiquement votre application après avoir ajouté/modifié la variable
+   - Attendez que le déploiement se termine
+
+6. **Vérifiez les logs** :
+   - Après le redéploiement, vérifiez les logs
+   - L'erreur `DATABASE_URL environment variable is not set` ne devrait plus apparaître
+
+**Exemple** :
+Si votre service PostgreSQL s'appelle `Postgres` :
+```
+DATABASE_URL = ${{Postgres.DATABASE_URL}}
+```
+
+Si votre service PostgreSQL s'appelle `PostgreSQL` :
+```
+DATABASE_URL = ${{PostgreSQL.DATABASE_URL}}
+```
+
+### Erreur "Application error: a client-side exception has occurred" - Listes déroulantes vides
+
+Si vous voyez cette erreur et que les listes déroulantes ne se chargent pas :
+
+**Causes possibles** :
+1. ❌ **`DATABASE_URL` n'est pas définie** (erreur la plus fréquente - voir ci-dessus)
+2. ❌ Les migrations n'ont pas été exécutées (base de données vide)
+3. ❌ Le seed n'a pas été exécuté (pas de données)
+4. ❌ Erreur de connexion à la base de données
+5. ❌ Variables d'environnement incorrectes
+
+**Diagnostic étape par étape** :
+
+1. **Vérifier les logs Railway** :
+   - Allez dans votre service web → **"Deployments"** → **"Logs"**
+   - Cherchez des erreurs comme :
+     - `DATABASE_URL environment variable is not set`
+     - `Error connecting to database`
+     - `relation "duo" does not exist` (migrations non exécutées)
+     - `relation "departement" does not exist` (migrations non exécutées)
+
+2. **Vérifier les variables d'environnement** :
+   - Allez dans votre service web → **"Variables"**
+   - Vérifiez que `DATABASE_URL` existe et utilise `${{Postgres.DATABASE_URL}}` (remplacez `Postgres` par le nom exact de votre service PostgreSQL)
+   - Vérifiez que `NEXT_PUBLIC_APP_URL` existe et utilise `${{RAILWAY_PUBLIC_DOMAIN}}`
+
+3. **Vérifier si les migrations ont été exécutées** :
+   - Allez dans votre service web → **"Deployments"** → **"Shell"**
+   - Exécutez :
+   ```bash
+   # Vérifier si les tables existent
+   psql $DATABASE_URL -c "\dt"
+   ```
+   - Vous devriez voir les tables : `duo`, `departement`, `commune`, `arrondissement`, `village`, `centre`, `vote`
+   - Si les tables n'existent pas, exécutez les migrations :
+   ```bash
+   npm run migrate
+   ```
+
+4. **Vérifier si les données ont été chargées** :
+   - Dans le même shell, exécutez :
+   ```bash
+   # Vérifier si les départements existent
+   psql $DATABASE_URL -c "SELECT COUNT(*) FROM departement;"
+   ```
+   - Si le résultat est `0`, exécutez le seed :
+   ```bash
+   npm run seed
+   ```
+
+5. **Tester les API directement** :
+   - Ouvrez votre navigateur et allez sur :
+   - `https://pr-2026-bj-production.up.railway.app/api/duos`
+   - `https://pr-2026-bj-production.up.railway.app/api/regions/departements`
+   - Vous devriez voir du JSON. Si vous voyez une erreur, vérifiez les logs Railway.
+
+**Solution complète** :
+
+Si les migrations et le seed n'ont pas été exécutés :
+
+1. Allez dans votre service web → **"Deployments"** → **"Shell"**
+2. Exécutez dans l'ordre :
+   ```bash
+   npm run migrate
+   npm run seed
+   ```
+3. Attendez que les deux commandes se terminent avec succès
+4. Rafraîchissez votre application dans le navigateur
+
+**Vérification finale** :
+
+Après avoir exécuté les migrations et le seed, vérifiez que tout fonctionne :
+
+1. Les API doivent retourner des données :
+   - `https://pr-2026-bj-production.up.railway.app/api/duos` → doit retourner 3 duos
+   - `https://pr-2026-bj-production.up.railway.app/api/regions/departements` → doit retourner 12 départements
+
+2. L'application doit charger les listes déroulantes sans erreur
+
+3. Ouvrez la console du navigateur (F12) et vérifiez qu'il n'y a pas d'erreurs JavaScript
 
 ### Build échoue
 
