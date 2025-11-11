@@ -522,6 +522,6 @@ await redis.setex(cacheKey, 30, JSON.stringify(data));
 
 ---
 
-**Dernière mise à jour** : 2024
-**Auteur** : Guide d'hébergement PR 2026
+**Dernière mise à jour** : 2025
+**Auteur** : SSDevApp
 
