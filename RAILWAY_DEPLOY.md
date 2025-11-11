@@ -45,6 +45,115 @@ PORT=3000
 - `DATABASE_URL` : Railway génère automatiquement cette variable depuis le service PostgreSQL. Utilisez la référence `${{Postgres.DATABASE_URL}}` où `Postgres` est le nom de votre service PostgreSQL.
 - `NEXT_PUBLIC_APP_URL` : Utilisez `${{RAILWAY_PUBLIC_DOMAIN}}` pour obtenir automatiquement l'URL publique de votre application.
 
+#### Si vous avez déjà des variables d'environnement
+
+Si Railway a déjà créé automatiquement des variables ou si vous en avez ajouté manuellement :
+
+1. **Vérifiez les variables existantes** dans votre service web → **"Variables"**
+
+2. **Variables à garder/modifier** :
+   - ✅ `DATABASE_URL` : Si elle existe déjà, vérifiez qu'elle utilise la référence `${{Postgres.DATABASE_URL}}` (remplacez `Postgres` par le nom exact de votre service PostgreSQL si différent)
+   - ✅ `NEXT_PUBLIC_APP_URL` : Modifiez-la pour utiliser `${{RAILWAY_PUBLIC_DOMAIN}}` si elle n'utilise pas déjà cette référence
+   - ✅ `NODE_ENV` : Gardez-la si elle existe, sinon ajoutez-la avec la valeur `production`
+   - ✅ `PORT` : Railway définit généralement `PORT` automatiquement, vous pouvez la garder ou la définir à `3000`
+
+3. **Variables à ajouter** (si elles n'existent pas) :
+   - ➕ `RATE_LIMIT_MAX_REQUESTS=100`
+   - ➕ `RATE_LIMIT_WINDOW_MS=60000`
+
+4. **Variables à supprimer** (si elles existent et ne sont pas nécessaires) :
+   - ❌ Variables de développement comme `NODE_ENV=development` (remplacez par `production`)
+   - ❌ Variables obsolètes ou non utilisées par l'application
+   - ❌ Variables avec des valeurs hardcodées qui devraient utiliser des références Railway
+
+5. **Variables générées automatiquement par Railway** (ne pas modifier) :
+   - 🔒 `RAILWAY_ENVIRONMENT`
+   - 🔒 `RAILWAY_PROJECT_ID`
+   - 🔒 `RAILWAY_SERVICE_ID`
+   - 🔒 `RAILWAY_PUBLIC_DOMAIN` (utilisez-la dans `NEXT_PUBLIC_APP_URL`)
+
+**Exemple de configuration finale** :
+```env
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+NEXT_PUBLIC_APP_URL=${{RAILWAY_PUBLIC_DOMAIN}}
+RATE_LIMIT_MAX_REQUESTS=100
+RATE_LIMIT_WINDOW_MS=60000
+NODE_ENV=production
+PORT=3000
+```
+
+**⚠️ Important** : Après avoir modifié les variables, Railway redéploiera automatiquement votre application. Assurez-vous que toutes les variables sont correctement configurées avant de sauvegarder.
+
+#### Guide détaillé pour vos variables actuelles
+
+Si vous avez les variables suivantes (générées automatiquement par Railway) :
+
+**✅ Variables à GARDER et VÉRIFIER** :
+
+1. **`DATABASE_URL`** 
+   - **Action** : Vérifiez qu'elle utilise `${{Postgres.DATABASE_URL}}` (ou le nom exact de votre service PostgreSQL)
+   - **Si elle contient une URL directe** : Remplacez-la par `${{Postgres.DATABASE_URL}}`
+   - **Pourquoi** : Cette référence se met à jour automatiquement si Railway change la configuration de la base de données
+
+2. **`NEXT_PUBLIC_APP_URL`**
+   - **Action** : Vérifiez qu'elle utilise `${{RAILWAY_PUBLIC_DOMAIN}}`
+   - **Si elle contient une URL hardcodée** : Remplacez-la par `${{RAILWAY_PUBLIC_DOMAIN}}`
+   - **Pourquoi** : Cette variable est nécessaire pour que Next.js génère les bonnes URLs côté client
+
+3. **`NODE_ENV`**
+   - **Action** : Vérifiez qu'elle est définie à `production`
+   - **Si elle vaut `development`** : Changez-la en `production`
+
+4. **`PORT`**
+   - **Action** : Gardez-la telle quelle (Railway la gère automatiquement)
+   - **Valeur recommandée** : `3000` (mais Railway peut la définir automatiquement)
+
+5. **`RATE_LIMIT_MAX_REQUESTS`**
+   - **Action** : Vérifiez qu'elle vaut `100` (déjà présente ✅)
+
+6. **`RATE_LIMIT_WINDOW_MS`**
+   - **Action** : Vérifiez qu'elle vaut `60000` (déjà présente ✅)
+
+**🔒 Variables générées par Railway - NE PAS MODIFIER** (mais vous pouvez les garder) :
+
+Ces variables sont créées automatiquement par Railway et ne doivent pas être modifiées manuellement :
+
+- `DATABASE_PUBLIC_URL` - URL publique de la base de données (générée par Railway)
+- `PGDATA`, `PGDATABASE`, `PGHOST`, `PGPASSWORD`, `PGPORT`, `PGUSER` - Variables PostgreSQL individuelles (générées par Railway)
+- `POSTGRES_DB`, `POSTGRES_PASSWORD`, `POSTGRES_USER` - Variables PostgreSQL (générées par Railway)
+- `RAILWAY_DEPLOYMENT_DRAINING_SECONDS` - Configuration Railway (générée automatiquement)
+- `SSL_CERT_DAYS` - Configuration SSL (générée par Railway)
+
+**❌ Variables à SUPPRIMER** (optionnel, mais recommandé pour nettoyer) :
+
+Vous pouvez supprimer ces variables car elles ne sont pas utilisées par votre application Next.js. Elles sont redondantes si `DATABASE_URL` est correctement configurée :
+
+- `DATABASE_PUBLIC_URL` (redondant avec `DATABASE_URL`)
+- `PGDATA`
+- `PGDATABASE`
+- `PGHOST`
+- `PGPASSWORD`
+- `PGPORT`
+- `PGUSER`
+- `POSTGRES_DB`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_USER`
+
+**⚠️ Note** : Ces variables PostgreSQL individuelles (`PG*` et `POSTGRES_*`) sont créées automatiquement par Railway pour le service PostgreSQL, mais votre application Next.js utilise uniquement `DATABASE_URL`. Vous pouvez les supprimer du service web pour garder la configuration propre, mais ce n'est pas obligatoire.
+
+**📋 Configuration finale recommandée pour votre service web** :
+
+```env
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+NEXT_PUBLIC_APP_URL=${{RAILWAY_PUBLIC_DOMAIN}}
+NODE_ENV=production
+PORT=3000
+RATE_LIMIT_MAX_REQUESTS=100
+RATE_LIMIT_WINDOW_MS=60000
+```
+
+Toutes les autres variables (`PG*`, `POSTGRES_*`, `RAILWAY_*`, etc.) peuvent être supprimées du service web car elles ne sont pas nécessaires pour votre application Next.js.
+
 ### Étape 4 : Configurer le Service Web
 
 1. Railway détectera automatiquement le Dockerfile
