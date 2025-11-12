@@ -44,10 +44,21 @@ http.Server.prototype.listen = function(...args) {
 
 // Importer et démarrer le serveur Next.js standalone
 // server.js est à la racine du répertoire de travail (/app/server.js)
+console.log('📂 Chemin de travail:', process.cwd());
+
+const fs = require('fs');
+const path = require('path');
+const serverPath = path.join(process.cwd(), 'server.js');
+console.log('📂 Chemin vers server.js:', serverPath);
+console.log('📂 server.js existe:', fs.existsSync(serverPath));
+
 try {
   require('../server.js');
+  console.log('✅ server.js chargé avec succès');
 } catch (error) {
   console.error('❌ Erreur lors du démarrage du serveur:', error);
+  console.error('❌ Message:', error.message);
+  console.error('❌ Stack:', error.stack);
   process.exit(1);
 }
 
