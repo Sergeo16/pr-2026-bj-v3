@@ -6,18 +6,48 @@
  */
 
 // S'assurer que PORT est défini (Railway le fournit automatiquement)
-const port = process.env.PORT || 3000;
-const hostname = process.env.HOSTNAME || '0.0.0.0';
+const port = parseInt(process.env.PORT || '3000', 10);
 
 // Définir les variables d'environnement pour Next.js standalone
+// Next.js standalone utilise PORT et HOSTNAME automatiquement
+// Forcer l'écoute sur toutes les interfaces (0.0.0.0) pour Railway
 process.env.PORT = port.toString();
-process.env.HOSTNAME = hostname;
+process.env.HOSTNAME = '0.0.0.0';
 
 console.log(`🚀 Démarrage du serveur Next.js...`);
 console.log(`   Port: ${port}`);
-console.log(`   Hostname: ${hostname}`);
+console.log(`   Hostname: 0.0.0.0`);
+console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
+
+// Intercepter le module 'http' pour forcer l'écoute sur 0.0.0.0
+const http = require('http');
+const originalListen = http.Server.prototype.listen;
+
+http.Server.prototype.listen = function(...args) {
+  // Si le premier argument est un nombre (port), forcer hostname à 0.0.0.0
+  if (typeof args[0] === 'number') {
+    args[0] = port;
+    if (args.length === 1 || typeof args[1] === 'function') {
+      args.splice(1, 0, '0.0.0.0');
+    } else if (typeof args[1] === 'string') {
+      args[1] = '0.0.0.0';
+    }
+  } else if (typeof args[0] === 'object' && args[0] !== null) {
+    // Si c'est un objet d'options
+    args[0].port = port;
+    args[0].host = '0.0.0.0';
+  }
+  
+  console.log(`   Configuration d'écoute: port=${port}, host=0.0.0.0`);
+  return originalListen.apply(this, args);
+};
 
 // Importer et démarrer le serveur Next.js standalone
 // server.js est à la racine du répertoire de travail (/app/server.js)
-require('../server.js');
+try {
+  require('../server.js');
+} catch (error) {
+  console.error('❌ Erreur lors du démarrage du serveur:', error);
+  process.exit(1);
+}
 
