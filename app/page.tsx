@@ -227,7 +227,7 @@ export default function HomePage() {
     setSelectedVillage(null);
     setSelectedCentre(null);
     setCount(0);
-    toast.info('Formulaire annulé');
+    toast.error('Formulaire annulé');
   };
 
   return (
@@ -236,7 +236,7 @@ export default function HomePage() {
 
       <form 
         onSubmit={handleSubmit} 
-        className="card bg-base-100 shadow-xl"
+        className="card bg-base-100 shadow-xl transition-all duration-300 hover:outline hover:outline-[4px] hover:outline-accent hover:outline-offset-2"
       >
         <div className="card-body p-4 sm:p-6 pb-8">
           <div className="form-control">
@@ -422,7 +422,9 @@ export default function HomePage() {
             <div className="flex gap-4">
               <button
                 type="button"
-                className="btn btn-outline flex-1"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg 
+                          transition-all duration-300 transform hover:scale-105 hover:shadow-lg 
+                          active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 onClick={handleCancel}
                 disabled={isSubmitting}
               >
@@ -430,7 +432,9 @@ export default function HomePage() {
               </button>
               <button
                 type="submit"
-                className="btn btn-primary flex-1"
+                className="flex-1 bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg 
+                          transition-all duration-300 transform hover:scale-105 hover:shadow-lg 
+                          active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Envoi...' : 'Soumettre'}

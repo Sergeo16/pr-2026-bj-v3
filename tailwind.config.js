@@ -6,11 +6,22 @@ module.exports = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        accent: '#00d9ff', // Cyan accent du thème dark de DaisyUI (même couleur que portfolio2)
+      },
+    },
   },
   plugins: [require('daisyui')],
   daisyui: {
     themes: ['light', 'dark'],
+    darkTheme: 'dark',
+    base: true,
+    styled: true,
+    utils: true,
+    prefix: '',
+    logs: true,
+    themeRoot: ':root',
   },
 }
 

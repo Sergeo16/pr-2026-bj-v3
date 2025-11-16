@@ -17,10 +17,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
+    <html lang="fr" data-theme="dark">
       <body className={inter.className}>
         <Navigation />
-        <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">{children}</main>
+        <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 pt-20 sm:pt-24">{children}</main>
         <ToastProvider />
       </body>
     </html>

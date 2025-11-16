@@ -422,7 +422,12 @@ export default function DashboardPage() {
               onChange={(e) => setFilterValue(e.target.value)}
             />
 
-            <button className="btn btn-primary w-full sm:w-auto" onClick={exportToCSV}>
+            <button 
+              className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg 
+                        transition-all duration-300 transform hover:scale-105 hover:shadow-lg 
+                        active:scale-95 w-full sm:w-auto"
+              onClick={exportToCSV}
+            >
               Exporter CSV
             </button>
           </div>

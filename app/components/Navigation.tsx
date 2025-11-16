@@ -1,34 +1,98 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Gem, Menu, X } from 'lucide-react';
 
 export default function Navigation() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
   const showDashboard = pathname?.includes('/dashboard');
 
   return (
-    <nav className="navbar bg-base-100 shadow-lg">
-      <div className="container mx-auto px-2 sm:px-4">
-        <div className="flex-1">
-          <Link href="/" className="btn btn-ghost text-lg sm:text-xl">
-            PR 2026 BJ
+    <>
+      <section className="fixed top-0 left-0 w-full z-50 bg-stone-950 shadow-md px-4 py-2">
+        <div className="flex justify-between items-center max-w-7xl mx-auto">
+          {/* Logo */}
+          <Link
+            href="/"
+            className="flex items-center font-bold text-xl md:text-3xl"
+            onClick={() => setIsOpen(false)}
+          >
+            <Gem className="mr-2 text-accent" />
+            PR<span className="text-accent">2026</span> BJ
           </Link>
-        </div>
-        <div className="flex-none">
-          <ul className="menu menu-horizontal px-1 text-sm sm:text-base">
+
+          {/* Menu Desktop */}
+          <ul className="hidden md:flex items-center space-x-6 md:pb-3">
             <li>
-              <Link href="/">Vote</Link>
+              <Link
+                href="/"
+                className="relative inline-block mx-2 py-1 text-white md:text-2xl hover:text-accent transition duration-300
+                          before:content-[''] before:absolute before:left-0 before:bottom-0 before:h-[2px] before:w-0 
+                          before:bg-accent before:transition-all before:duration-300 hover:before:w-full"
+              >
+                Vote
+              </Link>
             </li>
             {showDashboard && (
               <li>
-                <Link href="/dashboard">Dashboard</Link>
+                <Link
+                  href="/dashboard"
+                  className="relative inline-block mx-2 py-1 text-white md:text-2xl hover:text-accent transition duration-300
+                            before:content-[''] before:absolute before:left-0 before:bottom-0 before:h-[2px] before:w-0 
+                            before:bg-accent before:transition-all before:duration-300 hover:before:w-full"
+                >
+                  Dashboard
+                </Link>
+              </li>
+            )}
+          </ul>
+
+          {/* Menu Mobile Toggle */}
+          <button
+            className="md:hidden text-accent"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
+          >
+            {isOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
+      </section>
+
+      {/* Menu Mobile Dropdown */}
+      {isOpen && (
+        <div className="md:hidden fixed top-16 left-0 w-full bg-stone-950 z-40 shadow-md px-4 py-2">
+          <ul className="flex flex-col space-y-4 items-start">
+            <li>
+              <Link
+                href="/"
+                onClick={() => setIsOpen(false)}
+                className="relative inline-block py-1 text-white text-xl hover:text-accent transition duration-300
+                          before:content-[''] before:absolute before:left-0 before:bottom-0 before:h-[2px] before:w-0 
+                          before:bg-accent before:transition-all before:duration-300 hover:before:w-full"
+              >
+                Vote
+              </Link>
+            </li>
+            {showDashboard && (
+              <li>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsOpen(false)}
+                  className="relative inline-block py-1 text-white text-xl hover:text-accent transition duration-300
+                            before:content-[''] before:absolute before:left-0 before:bottom-0 before:h-[2px] before:w-0 
+                            before:bg-accent before:transition-all before:duration-300 hover:before:w-full"
+                >
+                  Dashboard
+                </Link>
               </li>
             )}
           </ul>
         </div>
-      </div>
-    </nav>
+      )}
+    </>
   );
 }
 
