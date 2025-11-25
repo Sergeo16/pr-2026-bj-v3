@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS centre (
 CREATE INDEX IF NOT EXISTS idx_centre_village_id ON centre(village_id);
 CREATE INDEX IF NOT EXISTS idx_centre_name ON centre(name);
 
--- Table: vote
+-- Table: vote (structure de base, sera complétée par les migrations suivantes)
 CREATE TABLE IF NOT EXISTS vote (
     id SERIAL PRIMARY KEY,
     full_name TEXT NOT NULL,
@@ -82,7 +82,6 @@ CREATE TABLE IF NOT EXISTS vote (
     arrondissement_id INTEGER NOT NULL REFERENCES arrondissement(id) ON DELETE RESTRICT,
     village_id INTEGER NOT NULL REFERENCES village(id) ON DELETE RESTRICT,
     centre_id INTEGER NOT NULL REFERENCES centre(id) ON DELETE RESTRICT,
-    count INTEGER NOT NULL CHECK (count >= 0),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

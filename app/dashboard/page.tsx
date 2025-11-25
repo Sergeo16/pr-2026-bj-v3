@@ -12,7 +12,13 @@ interface DuoStat {
 
 interface DashboardData {
   national: {
-    total: number;
+    totalInscrits: number;
+    totalVotants: number;
+    tauxParticipation: string;
+    totalBulletinsNuls: number;
+    totalBulletinsBlancs: number;
+    totalSuffragesExprimes: number;
+    totalVoix: number;
     byDuo: DuoStat[];
   };
   byDepartement: any[];
@@ -20,14 +26,15 @@ interface DashboardData {
   byArrondissement: any[];
   byVillage: any[];
   byCentre: any[];
+  byBureau: any[];
+  byAgent: any[];
 }
 
 // Couleurs pour les légendes et barres (couleurs vives)
-const COLORS = ['#0066FF', '#00D9A5', '#FFB800', '#FF6B35'];
+const COLORS = ['#0066FF', '#00D9A5'];
 const DUO_COLORS: Record<string, string> = {
-  'Duo 1': '#0066FF', // Bleu vif
-  'Duo 2': '#00D9A5', // Vert vif
-  'Duo 3': '#FFB800', // Jaune/Orange vif
+  'WADAGNI - TALATA': '#0066FF', // Bleu vif
+  'HOUNKPE - HOUNWANOU': '#00D9A5', // Vert vif
 };
 
 // Fonction helper pour formater les nombres avec espace comme séparateur de milliers
@@ -107,7 +114,7 @@ const renderLegend = (props: any) => {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [filter, setFilter] = useState<'departement' | 'commune' | 'arrondissement' | 'village' | 'centre'>('departement');
+  const [filter, setFilter] = useState<'departement' | 'commune' | 'arrondissement' | 'village' | 'centre' | 'bureau' | 'agent'>('departement');
   const [filterValue, setFilterValue] = useState<string>('');
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -166,15 +173,8 @@ export default function DashboardPage() {
       try {
         const parsed = JSON.parse(event.data);
         if (parsed.type === 'stats' && parsed.data) {
-          // Mettre à jour seulement les totaux nationaux depuis le stream SSE
-          // Cela évite de faire des requêtes répétées à /api/dashboard/stats
-          setData((prev) => {
-            if (!prev) return null;
-            return {
-              ...prev,
-              national: parsed.data.national,
-            };
-          });
+          // Mettre à jour toutes les données depuis le stream SSE pour les mises à jour en temps réel
+          setData(parsed.data);
         }
       } catch (error) {
         console.error('Error parsing SSE data:', error);
@@ -229,14 +229,25 @@ export default function DashboardPage() {
       case 'centre':
         sourceData = data.byCentre;
         break;
+      case 'bureau':
+        sourceData = data.byBureau || [];
+        break;
+      case 'agent':
+        sourceData = data.byAgent || [];
+        break;
     }
 
     if (filterValue) {
       const filtered = sourceData.filter((item) => {
+        if (filter === 'agent') {
+          // Filtrer par nom d'agent (full_name dans vote)
+          return item.full_name?.toLowerCase().includes(filterValue.toLowerCase());
+        }
         const nameField = filter === 'departement' ? 'name' : 
                           filter === 'commune' ? 'commune_name' :
                           filter === 'arrondissement' ? 'arrondissement_name' :
-                          filter === 'village' ? 'village_name' : 'centre_name';
+                          filter === 'village' ? 'village_name' :
+                          filter === 'centre' ? 'centre_name' : 'bureau_name';
         return item[nameField]?.toLowerCase().includes(filterValue.toLowerCase());
       });
       setFilteredData(filtered);
@@ -269,19 +280,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-8 px-2 sm:px-0">
+    <div className="space-y-4 sm:space-y-8 px-2 sm:px-4 max-w-7xl mx-auto">
       <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center">Dashboard - Synthèse en Temps Réel</h1>
 
-      {/* Nombre total de votes */}
+      {/* Graphiques */}
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body p-4 sm:p-6">
-          <h2 className="card-title text-xl sm:text-2xl">Nombre total de votes</h2>
-          <p className="text-2xl sm:text-3xl font-bold">{formatNumber(data.national.total)} votes</p>
-
           {/* Graphique en barres - Conteneur centré avec largeur limitée sur grands écrans */}
-          <div className="w-full flex justify-center">
+          <div className="w-full flex justify-center px-2 sm:px-4">
             <div className="w-full max-w-4xl">
-              <ResponsiveContainer width="100%" height={400} minHeight={300}>
+              <ResponsiveContainer width="100%" height={windowWidth && windowWidth < 640 ? 300 : windowWidth && windowWidth < 1024 ? 350 : 400} minHeight={250}>
                 <BarChart 
                   data={data.national.byDuo}
                   margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
@@ -295,7 +303,7 @@ export default function DashboardPage() {
                     tick={{ 
                       fill: isDarkMode ? '#ffffff' : '#1a1a1a', 
                       fontWeight: 'bold', 
-                      fontSize: 13,
+                      fontSize: windowWidth && windowWidth < 640 ? 11 : 13,
                       fontStyle: 'italic'
                     }}
                     axisLine={{ stroke: isDarkMode ? '#4b5563' : '#e5e7eb', strokeWidth: 1 }}
@@ -304,7 +312,7 @@ export default function DashboardPage() {
                     tick={{ 
                       fill: isDarkMode ? '#ffffff' : '#1a1a1a', 
                       fontWeight: 'bold', 
-                      fontSize: 13,
+                      fontSize: windowWidth && windowWidth < 640 ? 11 : 13,
                       fontStyle: 'italic'
                     }}
                     axisLine={{ stroke: isDarkMode ? '#4b5563' : '#e5e7eb', strokeWidth: 1 }}
@@ -319,6 +327,12 @@ export default function DashboardPage() {
                       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
                     cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                    formatter={(value: any, name: string) => {
+                      // Supprimer le label "total" et afficher directement la valeur avec le nom du duo
+                      const entry = data.national.byDuo.find(d => d.total === value);
+                      return [formatNumber(value), entry?.label || ''];
+                    }}
+                    labelFormatter={(label) => ''}
                   />
                   <Legend 
                     content={renderLegend}
@@ -328,6 +342,7 @@ export default function DashboardPage() {
                   />
                   <Bar 
                     dataKey="total"
+                    name=""
                     radius={[8, 8, 0, 0]}
                   >
                     {data.national.byDuo.map((entry, index) => {
@@ -340,32 +355,37 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            {data.national.byDuo.map((duo) => {
-              const duoColor = DUO_COLORS[duo.label] || COLORS[duo.id - 1] || '#666';
-              return (
-                <div key={duo.id} className="stat bg-base-200 rounded-lg p-4 border-2 flex flex-col items-center justify-center text-center" style={{ borderColor: duoColor }}>
-                  <div 
-                    className="stat-title text-sm sm:text-base font-bold" 
-                    style={{ color: duoColor }}
-                  >
-                    {duo.label}
-                  </div>
-                  <div className="stat-value text-xl sm:text-2xl">{formatNumber(duo.total)}</div>
-                  <div 
-                    className="stat-desc text-sm font-bold" 
-                    style={{ color: duoColor, fontSize: '1.1rem' }}
-                  >
-                    {duo.percentage}%
-                  </div>
-                </div>
-              );
-            })}
+          {/* Rectangles de synthèse par duo - Centrés et responsive */}
+          <div className="w-full flex justify-center mt-6">
+            <div className="w-full max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-center">
+                {data.national.byDuo.map((duo) => {
+                  const duoColor = DUO_COLORS[duo.label] || COLORS[duo.id - 1] || '#666';
+                  return (
+                    <div key={duo.id} className="stat bg-base-200 rounded-lg p-4 border-2 flex flex-col items-center justify-center text-center w-full sm:w-auto" style={{ borderColor: duoColor }}>
+                      <div 
+                        className="stat-title text-sm sm:text-base font-bold" 
+                        style={{ color: duoColor }}
+                      >
+                        {duo.label}
+                      </div>
+                      <div className="stat-value text-xl sm:text-2xl">{formatNumber(duo.total)}</div>
+                      <div 
+                        className="stat-desc text-sm font-bold" 
+                        style={{ color: duoColor, fontSize: '1.1rem' }}
+                      >
+                        {duo.percentage}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          {/* Graphique en camembert - Responsive avec marges adaptatives */}
-          <div className="w-full flex justify-center px-2 sm:px-4">
-            <div className="w-full max-w-full sm:max-w-2xl">
+          {/* Graphique en camembert - Responsive avec marges adaptatives et centré */}
+          <div className="w-full flex justify-center px-2 sm:px-4 mt-6">
+            <div className="w-full max-w-full sm:max-w-2xl flex justify-center">
               <ResponsiveContainer width="100%" height={windowWidth && windowWidth < 640 ? 250 : windowWidth && windowWidth < 1024 ? 300 : 350}>
                 <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                   <Pie
@@ -390,9 +410,58 @@ export default function DashboardPage() {
                       fontWeight: 'bold',
                       fontSize: '14px'
                     }}
+                    formatter={(value: any, name: string) => {
+                      const entry = data.national.byDuo.find(d => d.total === value);
+                      return [formatNumber(value), entry?.label || ''];
+                    }}
+                    labelFormatter={(label) => ''}
                   />
                 </PieChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Synthèse totale */}
+      <div className="card bg-base-100 shadow-xl">
+        <div className="card-body p-4 sm:p-6">
+          <h2 className="card-title text-xl sm:text-2xl mb-4">Synthèse totale</h2>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="stat bg-base-200 rounded-lg p-4">
+              <div className="stat-title">Inscrits</div>
+              <div className="stat-value text-2xl">{formatNumber(data.national.totalInscrits)}</div>
+            </div>
+            
+            <div className="stat bg-base-200 rounded-lg p-4">
+              <div className="stat-title">Votants</div>
+              <div className="stat-value text-2xl">{formatNumber(data.national.totalVotants)}</div>
+            </div>
+            
+            <div className="stat bg-base-200 rounded-lg p-4">
+              <div className="stat-title">Taux de participation</div>
+              <div className="stat-value text-2xl">{data.national.tauxParticipation}%</div>
+            </div>
+            
+            <div className="stat bg-base-200 rounded-lg p-4">
+              <div className="stat-title">Bulletins nuls</div>
+              <div className="stat-value text-2xl">{formatNumber(data.national.totalBulletinsNuls)}</div>
+            </div>
+            
+            <div className="stat bg-base-200 rounded-lg p-4">
+              <div className="stat-title">Bulletins blancs</div>
+              <div className="stat-value text-2xl">{formatNumber(data.national.totalBulletinsBlancs)}</div>
+            </div>
+            
+            <div className="stat bg-base-200 rounded-lg p-4">
+              <div className="stat-title">Suffrages exprimés</div>
+              <div className="stat-value text-2xl">{formatNumber(data.national.totalSuffragesExprimes)}</div>
+            </div>
+            
+            <div className="stat bg-base-200 rounded-lg p-4">
+              <div className="stat-title">Total des voix</div>
+              <div className="stat-value text-2xl">{formatNumber(data.national.totalVoix)}</div>
             </div>
           </div>
         </div>
@@ -412,6 +481,8 @@ export default function DashboardPage() {
               <option value="arrondissement">Par Arrondissement</option>
               <option value="village">Par Village</option>
               <option value="centre">Par Centre</option>
+              <option value="bureau">Par Bureau de vote</option>
+              <option value="agent">Par Agent</option>
             </select>
 
             <input
@@ -432,23 +503,37 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div className="overflow-x-auto -mx-2 sm:-mx-4 sm:mx-0">
-            <table className="table table-zebra w-full text-xs sm:text-sm md:text-base">
+          <div className="overflow-x-auto -mx-2 sm:-mx-4 sm:mx-0 w-full">
+            <table className="table table-zebra w-full text-xs sm:text-sm md:text-base min-w-full">
               <thead>
                 <tr className="whitespace-nowrap">
                   {filter === 'departement' && (
                     <>
                       <th>Département</th>
-                      <th>Duo</th>
-                      <th>Total Votes</th>
+                      <th>Inscrits</th>
+                      <th>Votants</th>
+                      <th>Taux participation</th>
+                      <th>Bulletins nuls</th>
+                      <th>Bulletins blancs</th>
+                      <th>Suffrages exprimés</th>
+                      <th>WADAGNI - TALATA</th>
+                      <th>HOUNKPE - HOUNWANOU</th>
+                      <th>Total voix</th>
                     </>
                   )}
                   {filter === 'commune' && (
                     <>
                       <th>Département</th>
                       <th>Commune</th>
-                      <th>Duo</th>
-                      <th>Total Votes</th>
+                      <th>Inscrits</th>
+                      <th>Votants</th>
+                      <th>Taux participation</th>
+                      <th>Bulletins nuls</th>
+                      <th>Bulletins blancs</th>
+                      <th>Suffrages exprimés</th>
+                      <th>WADAGNI - TALATA</th>
+                      <th>HOUNKPE - HOUNWANOU</th>
+                      <th>Total voix</th>
                     </>
                   )}
                   {filter === 'arrondissement' && (
@@ -456,8 +541,15 @@ export default function DashboardPage() {
                       <th>Département</th>
                       <th>Commune</th>
                       <th>Arrondissement</th>
-                      <th>Duo</th>
-                      <th>Total Votes</th>
+                      <th>Inscrits</th>
+                      <th>Votants</th>
+                      <th>Taux participation</th>
+                      <th>Bulletins nuls</th>
+                      <th>Bulletins blancs</th>
+                      <th>Suffrages exprimés</th>
+                      <th>WADAGNI - TALATA</th>
+                      <th>HOUNKPE - HOUNWANOU</th>
+                      <th>Total voix</th>
                     </>
                   )}
                   {filter === 'village' && (
@@ -466,8 +558,15 @@ export default function DashboardPage() {
                       <th>Commune</th>
                       <th>Arrondissement</th>
                       <th>Village</th>
-                      <th>Duo</th>
-                      <th>Total Votes</th>
+                      <th>Inscrits</th>
+                      <th>Votants</th>
+                      <th>Taux participation</th>
+                      <th>Bulletins nuls</th>
+                      <th>Bulletins blancs</th>
+                      <th>Suffrages exprimés</th>
+                      <th>WADAGNI - TALATA</th>
+                      <th>HOUNKPE - HOUNWANOU</th>
+                      <th>Total voix</th>
                     </>
                   )}
                   {filter === 'centre' && (
@@ -477,62 +576,181 @@ export default function DashboardPage() {
                       <th>Arrondissement</th>
                       <th>Village</th>
                       <th>Centre</th>
-                      <th>Duo</th>
-                      <th>Total Votes</th>
+                      <th>Inscrits</th>
+                      <th>Votants</th>
+                      <th>Taux participation</th>
+                      <th>Bulletins nuls</th>
+                      <th>Bulletins blancs</th>
+                      <th>Suffrages exprimés</th>
+                      <th>WADAGNI - TALATA</th>
+                      <th>HOUNKPE - HOUNWANOU</th>
+                      <th>Total voix</th>
+                    </>
+                  )}
+                  {filter === 'bureau' && (
+                    <>
+                      <th>Département</th>
+                      <th>Commune</th>
+                      <th>Arrondissement</th>
+                      <th>Village</th>
+                      <th>Centre</th>
+                      <th>Bureau</th>
+                      <th>Inscrits</th>
+                      <th>Votants</th>
+                      <th>Taux participation</th>
+                      <th>Bulletins nuls</th>
+                      <th>Bulletins blancs</th>
+                      <th>Suffrages exprimés</th>
+                      <th>WADAGNI - TALATA</th>
+                      <th>HOUNKPE - HOUNWANOU</th>
+                      <th>Total voix</th>
+                    </>
+                  )}
+                  {filter === 'agent' && (
+                    <>
+                      <th>Agent</th>
+                      <th>Département</th>
+                      <th>Commune</th>
+                      <th>Arrondissement</th>
+                      <th>Village</th>
+                      <th>Centre</th>
+                      <th>Bureau</th>
+                      <th>Date</th>
+                      <th>Inscrits</th>
+                      <th>Votants</th>
+                      <th>WADAGNI - TALATA</th>
+                      <th>HOUNKPE - HOUNWANOU</th>
                     </>
                   )}
                 </tr>
               </thead>
               <tbody>
-                {filteredData.slice(0, 100).map((row, idx) => (
-                  <tr key={idx}>
-                    {filter === 'departement' && (
-                      <>
-                        <td>{row.name}</td>
-                        <td>{row.duo_label}</td>
-                        <td>{formatNumber(parseInt(row.total_votes, 10))}</td>
-                      </>
-                    )}
-                    {filter === 'commune' && (
-                      <>
-                        <td>{row.departement_name}</td>
-                        <td>{row.commune_name}</td>
-                        <td>{row.duo_label}</td>
-                        <td>{formatNumber(parseInt(row.total_votes, 10))}</td>
-                      </>
-                    )}
-                    {filter === 'arrondissement' && (
-                      <>
-                        <td>{row.departement_name}</td>
-                        <td>{row.commune_name}</td>
-                        <td>{row.arrondissement_name}</td>
-                        <td>{row.duo_label}</td>
-                        <td>{formatNumber(parseInt(row.total_votes, 10))}</td>
-                      </>
-                    )}
-                    {filter === 'village' && (
-                      <>
-                        <td>{row.departement_name}</td>
-                        <td>{row.commune_name}</td>
-                        <td>{row.arrondissement_name}</td>
-                        <td>{row.village_name}</td>
-                        <td>{row.duo_label}</td>
-                        <td>{formatNumber(parseInt(row.total_votes, 10))}</td>
-                      </>
-                    )}
-                    {filter === 'centre' && (
-                      <>
-                        <td>{row.departement_name}</td>
-                        <td>{row.commune_name}</td>
-                        <td>{row.arrondissement_name}</td>
-                        <td>{row.village_name}</td>
-                        <td>{row.centre_name}</td>
-                        <td>{row.duo_label}</td>
-                        <td>{formatNumber(parseInt(row.total_votes, 10))}</td>
-                      </>
-                    )}
-                  </tr>
-                ))}
+                {filteredData.slice(0, 100).map((row, idx) => {
+                  const inscrits = parseInt(row.total_inscrits || 0, 10);
+                  const votants = parseInt(row.total_votants || 0, 10);
+                  const tauxParticipation = inscrits > 0 ? ((votants / inscrits) * 100).toFixed(2) : '0.00';
+                  const totalVoix = parseInt(row.total_wadagni_talata || 0, 10) + parseInt(row.total_hounkpe_hounwanou || 0, 10);
+                  
+                  return (
+                    <tr key={idx}>
+                      {filter === 'departement' && (
+                        <>
+                          <td>{row.name}</td>
+                          <td>{formatNumber(inscrits)}</td>
+                          <td>{formatNumber(votants)}</td>
+                          <td>{tauxParticipation}%</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_nuls || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_blancs || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_suffrages_exprimes || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_wadagni_talata || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_hounkpe_hounwanou || 0, 10))}</td>
+                          <td>{formatNumber(totalVoix)}</td>
+                        </>
+                      )}
+                      {filter === 'commune' && (
+                        <>
+                          <td>{row.departement_name}</td>
+                          <td>{row.commune_name}</td>
+                          <td>{formatNumber(inscrits)}</td>
+                          <td>{formatNumber(votants)}</td>
+                          <td>{tauxParticipation}%</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_nuls || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_blancs || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_suffrages_exprimes || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_wadagni_talata || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_hounkpe_hounwanou || 0, 10))}</td>
+                          <td>{formatNumber(totalVoix)}</td>
+                        </>
+                      )}
+                      {filter === 'arrondissement' && (
+                        <>
+                          <td>{row.departement_name}</td>
+                          <td>{row.commune_name}</td>
+                          <td>{row.arrondissement_name}</td>
+                          <td>{formatNumber(inscrits)}</td>
+                          <td>{formatNumber(votants)}</td>
+                          <td>{tauxParticipation}%</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_nuls || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_blancs || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_suffrages_exprimes || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_wadagni_talata || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_hounkpe_hounwanou || 0, 10))}</td>
+                          <td>{formatNumber(totalVoix)}</td>
+                        </>
+                      )}
+                      {filter === 'village' && (
+                        <>
+                          <td>{row.departement_name}</td>
+                          <td>{row.commune_name}</td>
+                          <td>{row.arrondissement_name}</td>
+                          <td>{row.village_name}</td>
+                          <td>{formatNumber(inscrits)}</td>
+                          <td>{formatNumber(votants)}</td>
+                          <td>{tauxParticipation}%</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_nuls || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_blancs || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_suffrages_exprimes || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_wadagni_talata || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_hounkpe_hounwanou || 0, 10))}</td>
+                          <td>{formatNumber(totalVoix)}</td>
+                        </>
+                      )}
+                      {filter === 'centre' && (
+                        <>
+                          <td>{row.departement_name}</td>
+                          <td>{row.commune_name}</td>
+                          <td>{row.arrondissement_name}</td>
+                          <td>{row.village_name}</td>
+                          <td>{row.centre_name}</td>
+                          <td>{formatNumber(inscrits)}</td>
+                          <td>{formatNumber(votants)}</td>
+                          <td>{tauxParticipation}%</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_nuls || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_blancs || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_suffrages_exprimes || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_wadagni_talata || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_hounkpe_hounwanou || 0, 10))}</td>
+                          <td>{formatNumber(totalVoix)}</td>
+                        </>
+                      )}
+                      {filter === 'bureau' && (
+                        <>
+                          <td>{row.departement_name}</td>
+                          <td>{row.commune_name}</td>
+                          <td>{row.arrondissement_name}</td>
+                          <td>{row.village_name}</td>
+                          <td>{row.centre_name}</td>
+                          <td>{row.bureau_name}</td>
+                          <td>{formatNumber(inscrits)}</td>
+                          <td>{formatNumber(votants)}</td>
+                          <td>{tauxParticipation}%</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_nuls || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_bulletins_blancs || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_suffrages_exprimes || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_wadagni_talata || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.total_hounkpe_hounwanou || 0, 10))}</td>
+                          <td>{formatNumber(totalVoix)}</td>
+                        </>
+                      )}
+                      {filter === 'agent' && (
+                        <>
+                          <td>{row.full_name}</td>
+                          <td>{row.departement_name}</td>
+                          <td>{row.commune_name}</td>
+                          <td>{row.arrondissement_name}</td>
+                          <td>{row.village_name}</td>
+                          <td>{row.centre_name}</td>
+                          <td>{row.bureau_name}</td>
+                          <td>{new Date(row.created_at).toLocaleDateString('fr-FR')}</td>
+                          <td>{formatNumber(parseInt(row.inscrits || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.votants || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.voix_wadagni_talata || 0, 10))}</td>
+                          <td>{formatNumber(parseInt(row.voix_hounkpe_hounwanou || 0, 10))}</td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {filteredData.length > 100 && (
