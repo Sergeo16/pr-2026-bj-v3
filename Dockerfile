@@ -64,6 +64,8 @@ EXPOSE 3000
 ENV HOSTNAME "0.0.0.0"
 
 # Avec Next.js standalone, server.js est à la racine après copie
-# Next.js standalone devrait automatiquement utiliser PORT et HOSTNAME
-CMD ["node", "server.js"]
+# Utiliser le script de démarrage qui exécute les migrations avant de démarrer le serveur
+# Pour Railway, utiliser start-railway.js qui exécute les migrations automatiquement
+# Pour Docker local, utiliser directement server.js (les migrations sont gérées séparément)
+CMD ["node", "scripts/start-railway.js"]
 
