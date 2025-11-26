@@ -42,39 +42,83 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString('fr-FR');
 };
 
-// Composant Label adaptatif pour le camembert (responsive) - Labels à l'intérieur avec texte blanc sur plusieurs lignes
-const ResponsivePieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, label, windowWidth = 1024 }: any) => {
+// Stockage des positions des labels pour éviter les chevauchements (réinitialisé à chaque rendu)
+let labelPositionsCache: Map<number, { x: number; y: number; radius: number }> = new Map();
+
+// Composant Label adaptatif pour le camembert (responsive) - Labels à l'extérieur avec lignes de connexion
+const ResponsivePieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, label, windowWidth = 1024, index = 0, totalSlices = 2 }: any) => {
   const RADIAN = Math.PI / 180;
   
-  // Ajuster le rayon selon la taille de l'écran
-  const isSmallScreen = windowWidth < 640; // sm breakpoint
-  const isMediumScreen = windowWidth < 1024; // lg breakpoint
+  // Réinitialiser le cache au premier label (index 0)
+  if (index === 0) {
+    labelPositionsCache.clear();
+  }
   
-  // Réduire le rayon pour éviter les débordements
-  const radius = isSmallScreen 
-    ? innerRadius + (outerRadius - innerRadius) * 0.3
-    : isMediumScreen
-    ? innerRadius + (outerRadius - innerRadius) * 0.4
-    : innerRadius + (outerRadius - innerRadius) * 0.5;
+  // Ajuster selon la taille de l'écran
+  const isSmallScreen = windowWidth < 640;
+  const isMediumScreen = windowWidth < 1024;
   
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  // Distance de base pour les labels
+  const baseLabelRadius = outerRadius + (isSmallScreen ? 15 : isMediumScreen ? 20 : 25);
+  
+  // Calculer l'angle normalisé
+  const labelAngle = -midAngle * RADIAN;
+  
+  // Point de connexion sur le bord du cercle
+  const connectX = cx + outerRadius * Math.cos(labelAngle);
+  const connectY = cy + outerRadius * Math.sin(labelAngle);
+  
+  // Calculer la position initiale du label
+  let labelRadius = baseLabelRadius;
+  let labelX = cx + labelRadius * Math.cos(labelAngle);
+  let labelY = cy + labelRadius * Math.sin(labelAngle);
+  
+  // Vérifier et éviter les chevauchements avec les labels précédents
+  const minDistance = isSmallScreen ? 45 : isMediumScreen ? 55 : 65;
+  let attempts = 0;
+  const maxAttempts = 15;
+  
+  while (attempts < maxAttempts) {
+    let hasCollision = false;
+    
+    // Vérifier les collisions avec tous les labels précédents
+    for (const [prevIndex, pos] of labelPositionsCache.entries()) {
+      if (prevIndex === index) continue;
+      
+      const distance = Math.sqrt(Math.pow(labelX - pos.x, 2) + Math.pow(labelY - pos.y, 2));
+      if (distance < minDistance) {
+        hasCollision = true;
+        break;
+      }
+    }
+    
+    if (!hasCollision) {
+      break;
+    }
+    
+    // Augmenter le rayon pour éviter la collision
+    labelRadius += 8;
+    labelX = cx + labelRadius * Math.cos(labelAngle);
+    labelY = cy + labelRadius * Math.sin(labelAngle);
+    attempts++;
+  }
+  
+  // Stocker la position pour les prochains labels
+  labelPositionsCache.set(index, { x: labelX, y: labelY, radius: labelRadius });
   
   const percentage = (percent * 100).toFixed(1);
   
   // Taille de police adaptative
-  const fontSize = isSmallScreen ? '10px' : isMediumScreen ? '12px' : '14px';
+  const fontSize = isSmallScreen ? '10px' : isMediumScreen ? '11px' : '12px';
   
   // Diviser le label en plusieurs lignes si nécessaire (max 2 lignes)
-  const maxCharsPerLine = isSmallScreen ? 12 : isMediumScreen ? 18 : 25;
+  const maxCharsPerLine = isSmallScreen ? 15 : isMediumScreen ? 20 : 25;
   const splitLabel = (text: string, maxLength: number): string[] => {
     if (text.length <= maxLength) return [text];
-    // Essayer de couper au dernier espace avant maxLength
     const spaceIndex = text.lastIndexOf(' ', maxLength);
     if (spaceIndex > maxLength * 0.6) {
       return [text.substring(0, spaceIndex), text.substring(spaceIndex + 1)];
     }
-    // Sinon couper au milieu
     const mid = Math.floor(text.length / 2);
     const spaceMid = text.lastIndexOf(' ', mid);
     if (spaceMid > mid * 0.7) {
@@ -84,28 +128,41 @@ const ResponsivePieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percen
   };
   
   const labelLines = splitLabel(label, maxCharsPerLine);
-  const lineHeight = parseFloat(fontSize) * 1.2;
+  const lineHeight = parseFloat(fontSize) * 1.3;
   const totalHeight = labelLines.length * lineHeight;
-  const startY = y - (totalHeight / 2) + (lineHeight / 2);
+  const startY = labelY - (totalHeight / 2) + (lineHeight / 2);
+  
+  // Déterminer l'alignement du texte selon la position
+  const textAnchor = labelX > cx ? 'start' : 'end';
   
   return (
     <g>
-      {labelLines.map((line, index) => (
+      {/* Ligne de connexion */}
+      <line
+        x1={connectX}
+        y1={connectY}
+        x2={labelX}
+        y2={labelY}
+        stroke="#666"
+        strokeWidth={1.5}
+        strokeDasharray="3,3"
+      />
+      {/* Labels multi-lignes */}
+      {labelLines.map((line, lineIndex) => (
         <text
-          key={index}
-          x={x}
-          y={startY + (index * lineHeight)}
-          fill="#ffffff"
-          textAnchor="middle"
+          key={lineIndex}
+          x={labelX}
+          y={startY + (lineIndex * lineHeight)}
+          fill="#333"
+          textAnchor={textAnchor}
           dominantBaseline="central"
           style={{
             fontWeight: 'bold',
             fontSize: fontSize,
-            filter: 'drop-shadow(0 0 3px rgba(0,0,0,0.9))',
-            textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
+            fill: '#1f2937',
           }}
         >
-          {index === labelLines.length - 1 ? `${line}: ${percentage}%` : line}
+          {lineIndex === labelLines.length - 1 ? `${line}: ${percentage}%` : line}
         </text>
       ))}
     </g>
@@ -411,23 +468,30 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Graphique en camembert - Responsive avec marges adaptatives et centré */}
-          <div className="w-full flex justify-center px-2 sm:px-4 mt-6 overflow-hidden">
-            <div className="w-full max-w-full sm:max-w-2xl flex justify-center overflow-hidden">
-              <ResponsiveContainer width="100%" height={windowWidth && windowWidth < 640 ? 250 : windowWidth && windowWidth < 1024 ? 300 : 350}>
+          {/* Graphique en camembert - Responsive avec labels à l'extérieur */}
+          <div className="w-full flex justify-center px-2 sm:px-4 mt-6 overflow-visible">
+            <div className="w-full max-w-full sm:max-w-2xl flex justify-center overflow-visible">
+              <ResponsiveContainer width="100%" height={windowWidth && windowWidth < 640 ? 350 : windowWidth && windowWidth < 1024 ? 400 : 450}>
                 <PieChart margin={
                   windowWidth && windowWidth < 640 
-                    ? { top: 5, right: 5, bottom: 5, left: 5 }  // Marges réduites sur petits écrans
+                    ? { top: 20, right: 20, bottom: 20, left: 20 }  // Marges augmentées pour les labels extérieurs
                     : windowWidth && windowWidth < 1024
-                    ? { top: 10, right: 10, bottom: 10, left: 10 }
-                    : { top: 10, right: 10, bottom: 10, left: 10 }
+                    ? { top: 30, right: 30, bottom: 30, left: 30 }
+                    : { top: 40, right: 40, bottom: 40, left: 40 }
                 }>
                   <Pie
                     data={data.national.byDuo}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(props) => <ResponsivePieLabel {...props} windowWidth={windowWidth || 1024} />}
+                    label={(props: any) => (
+                      <ResponsivePieLabel 
+                        {...props} 
+                        windowWidth={windowWidth || 1024}
+                        index={props.index}
+                        totalSlices={data.national.byDuo.length}
+                      />
+                    )}
                     outerRadius={windowWidth && windowWidth < 640 ? 60 : windowWidth && windowWidth < 1024 ? 70 : 80}
                     fill="#8884d8"
                     dataKey="total"
