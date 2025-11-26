@@ -132,34 +132,37 @@ const ResponsivePieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percen
   const totalHeight = labelLines.length * lineHeight;
   const startY = labelY - (totalHeight / 2) + (lineHeight / 2);
   
+  // Utiliser la même couleur que le diagramme en barres
+  const labelColor = DUO_COLORS[label] || COLORS[index % COLORS.length];
+  
   // Déterminer l'alignement du texte selon la position
   const textAnchor = labelX > cx ? 'start' : 'end';
   
   return (
     <g>
-      {/* Ligne de connexion */}
+      {/* Ligne de connexion avec la couleur du duo */}
       <line
         x1={connectX}
         y1={connectY}
         x2={labelX}
         y2={labelY}
-        stroke="#666"
+        stroke={labelColor}
         strokeWidth={1.5}
         strokeDasharray="3,3"
       />
-      {/* Labels multi-lignes */}
+      {/* Labels multi-lignes avec la couleur du duo */}
       {labelLines.map((line, lineIndex) => (
         <text
           key={lineIndex}
           x={labelX}
           y={startY + (lineIndex * lineHeight)}
-          fill="#333"
+          fill={labelColor}
           textAnchor={textAnchor}
           dominantBaseline="central"
           style={{
             fontWeight: 'bold',
             fontSize: fontSize,
-            fill: '#1f2937',
+            fill: labelColor,
           }}
         >
           {lineIndex === labelLines.length - 1 ? `${line}: ${percentage}%` : line}
