@@ -44,9 +44,9 @@ async function main() {
   console.log(`   Hostname: 0.0.0.0`);
   
   try {
-    // Next.js standalone utilise server.js à la racine
-    // Render définit automatiquement PORT, donc on utilise directement node server.js
-    execSync('node server.js', { 
+    // Utiliser next start qui gère automatiquement le standalone build
+    // Render définit automatiquement PORT
+    execSync('npx next start', { 
       stdio: 'inherit',
       env: {
         ...process.env,
