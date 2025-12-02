@@ -23,7 +23,7 @@ services:
 databases:
   # Base de données PostgreSQL
   - name: pr-2026-db
-    plan: starter
+    plan: basic-1gb
     databaseName: pr2026_db
     user: pr2026_user
 

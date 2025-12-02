@@ -14,9 +14,11 @@
 
 | Plan | Prix | Caractéristiques | Recommandation |
 |------|------|------------------|---------------|
-| **Free** | Gratuit | ⚠️ 90 jours max (puis suppression)<br>⚠️ 256 MB max<br>⚠️ Connexions limitées<br>⚠️ Pas de sauvegarde automatique | ⚠️ **Uniquement pour test** |
-| **Starter** | $7/mois | ✅ Permanente<br>✅ 1 GB<br>✅ Sauvegardes automatiques<br>✅ Plus de connexions | ✅ **Recommandé pour production** |
-| **Standard** | $20/mois | ✅ Plus de ressources<br>✅ 2.5 GB<br>✅ Haute disponibilité | Pour haute charge |
+| **free** | Gratuit | ⚠️ 90 jours max (puis suppression)<br>⚠️ 256 MB max<br>⚠️ Connexions limitées<br>⚠️ Pas de sauvegarde automatique | ⚠️ **Uniquement pour test** |
+| **basic-1gb** | ~$7/mois | ✅ Permanente<br>✅ 1 GB<br>✅ Sauvegardes automatiques<br>✅ Plus de connexions | ✅ **Recommandé pour production** |
+| **basic-4gb** | ~$20/mois | ✅ Plus de ressources<br>✅ 4 GB<br>✅ Haute disponibilité | Pour haute charge |
+
+**Note** : Les anciens plans "starter" et "standard" ne sont plus disponibles. Render utilise maintenant des plans flexibles (basic-*, pro-*, accelerated-*).
 
 ## 🎯 Recommandations pour ce Projet
 
@@ -34,9 +36,9 @@
 
 ### Option 3 : Production (Recommandé)
 - ✅ Service web : Starter ($7/mois)
-- ✅ Base de données : Starter ($7/mois)
+- ✅ Base de données : basic-1gb (~$7/mois)
 - ✅ **Avantages** : Permanente, sauvegardes, pas de limitations
-- 💰 **Coût** : $14/mois
+- 💰 **Coût** : ~$14/mois
 
 ## ⚠️ Important : Plan Free PostgreSQL
 
@@ -47,7 +49,7 @@ Le plan Free pour PostgreSQL a des limitations importantes :
 3. **Pas de sauvegarde automatique** : Vous devez faire vos propres sauvegardes
 4. **Connexions limitées** : Moins de connexions simultanées
 
-**Recommandation** : Si vous voulez garder vos données à long terme, utilisez au minimum le plan Starter ($7/mois).
+**Recommandation** : Si vous voulez garder vos données à long terme, utilisez au minimum le plan `basic-1gb` (~$7/mois).
 
 ## 🔄 Impact sur votre Projet Existant
 
