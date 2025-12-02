@@ -17,7 +17,8 @@
     "docker:dev:build": "docker-compose -f docker-compose.dev.yml up --build",
     "start:dev": "node scripts/start-dev.js",
     "start:docker:prod": "node scripts/start-docker-prod.js",
-    "start:docker:dev": "node scripts/start-docker-dev.js"
+    "start:docker:dev": "node scripts/start-docker-dev.js",
+    "start:render": "node scripts/start-render.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

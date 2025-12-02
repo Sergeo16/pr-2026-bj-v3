@@ -518,6 +518,17 @@ Tests disponibles:
 
 ## 📦 Déploiement
 
+### Déploiement sur Render (Recommandé)
+
+Pour déployer sur Render après avoir pushé sur GitHub, consultez le guide complet : **[RENDER_DEPLOY.md](./RENDER_DEPLOY.md)**
+
+**Résumé rapide :**
+1. Poussez votre code sur GitHub
+2. Créez un compte sur [Render.com](https://render.com)
+3. Créez un nouveau service "Blueprint" et connectez votre dépôt GitHub
+4. Render détectera automatiquement `render.yaml` et configurera tout
+5. Les migrations et le seed s'exécutent automatiquement au démarrage
+
 ### Production avec Docker
 
 1. **Construire l'image**:
