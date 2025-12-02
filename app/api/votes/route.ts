@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { QueryResult } from 'pg';
 import { getPool } from '@/lib/db';
 import { rateLimitMiddleware } from '@/lib/rate-limit';
 import { voteSchema, sanitizeString } from '@/lib/validation';
@@ -45,7 +46,7 @@ async function handler(req: NextRequest) {
       client.query('SELECT id FROM centre WHERE id = $1', [validatedData.centreId]),
     ]);
 
-    if (checks.some(result => result.rows.length === 0)) {
+    if (checks.some((result: QueryResult) => result.rows.length === 0)) {
       await client.query('ROLLBACK');
       return NextResponse.json(
         { error: 'Invalid reference IDs' },
