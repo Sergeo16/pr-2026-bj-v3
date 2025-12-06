@@ -44,17 +44,36 @@ async function main() {
   console.log(`   Hostname: 0.0.0.0`);
   
   try {
-    // Utiliser next start qui gère automatiquement le standalone build
-    // Render définit automatiquement PORT
-    execSync('npx next start', { 
-      stdio: 'inherit',
-      env: {
-        ...process.env,
-        HOSTNAME: '0.0.0.0',
-        PORT: process.env.PORT || '3000'
-      },
-      cwd: process.cwd()
-    });
+    // Avec output: 'standalone', Next.js génère un serveur optimisé dans .next/standalone
+    // Il faut utiliser node .next/standalone/server.js au lieu de next start
+    const standalonePath = path.join(process.cwd(), '.next', 'standalone', 'server.js');
+    const fs = require('fs');
+    
+    if (fs.existsSync(standalonePath)) {
+      console.log('✅ Utilisation du mode standalone optimisé');
+      // Utiliser le serveur standalone qui est plus léger en mémoire
+      execSync(`node ${standalonePath}`, { 
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          HOSTNAME: '0.0.0.0',
+          PORT: process.env.PORT || '3000'
+        },
+        cwd: process.cwd()
+      });
+    } else {
+      console.log('⚠️  Mode standalone non trouvé, utilisation de next start');
+      // Fallback si le build standalone n'existe pas
+      execSync('npx next start', { 
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          HOSTNAME: '0.0.0.0',
+          PORT: process.env.PORT || '3000'
+        },
+        cwd: process.cwd()
+      });
+    }
   } catch (error) {
     console.error('❌ Erreur lors du démarrage du serveur:', error.message);
     process.exit(1);

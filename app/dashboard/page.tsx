@@ -21,13 +21,6 @@ interface DashboardData {
     totalVoix: number;
     byDuo: DuoStat[];
   };
-  byDepartement: any[];
-  byCommune: any[];
-  byArrondissement: any[];
-  byVillage: any[];
-  byCentre: any[];
-  byBureau: any[];
-  byAgent: any[];
 }
 
 // Couleurs pour les légendes et barres (couleurs vives)
@@ -75,6 +68,7 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState<'departement' | 'commune' | 'arrondissement' | 'village' | 'centre' | 'bureau' | 'agent'>('departement');
   const [filterValue, setFilterValue] = useState<string>('');
   const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [windowWidth, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
@@ -131,7 +125,7 @@ export default function DashboardPage() {
       try {
         const parsed = JSON.parse(event.data);
         if (parsed.type === 'stats' && parsed.data) {
-          // Mettre à jour toutes les données depuis le stream SSE pour les mises à jour en temps réel
+          // Mettre à jour seulement les données synthèse depuis le stream SSE
           setData(parsed.data);
         }
       } catch (error) {
@@ -150,12 +144,15 @@ export default function DashboardPage() {
     };
   }, []);
 
+  // Charger les données du tableau à la demande (quand le filtre change immédiatement, recherche avec debounce)
   useEffect(() => {
-    if (data) {
-      applyFilter();
-    }
+    const timer = setTimeout(() => {
+      loadTableData();
+    }, filterValue ? 500 : 0); // Debounce de 500ms pour la recherche, immédiat pour le changement de filtre
+
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, filterValue, data]);
+  }, [filter, filterValue]);
 
   const fetchStats = async () => {
     try {
@@ -167,50 +164,21 @@ export default function DashboardPage() {
     }
   };
 
-  const applyFilter = () => {
-    if (!data) return;
-
-    let sourceData: any[] = [];
-    switch (filter) {
-      case 'departement':
-        sourceData = data.byDepartement;
-        break;
-      case 'commune':
-        sourceData = data.byCommune;
-        break;
-      case 'arrondissement':
-        sourceData = data.byArrondissement;
-        break;
-      case 'village':
-        sourceData = data.byVillage;
-        break;
-      case 'centre':
-        sourceData = data.byCentre;
-        break;
-      case 'bureau':
-        sourceData = data.byBureau || [];
-        break;
-      case 'agent':
-        sourceData = data.byAgent || [];
-        break;
-    }
-
-    if (filterValue) {
-      const filtered = sourceData.filter((item) => {
-        if (filter === 'agent') {
-          // Filtrer par nom d'agent (full_name dans vote)
-          return item.full_name?.toLowerCase().includes(filterValue.toLowerCase());
-        }
-        const nameField = filter === 'departement' ? 'name' : 
-                          filter === 'commune' ? 'commune_name' :
-                          filter === 'arrondissement' ? 'arrondissement_name' :
-                          filter === 'village' ? 'village_name' :
-                          filter === 'centre' ? 'centre_name' : 'bureau_name';
-        return item[nameField]?.toLowerCase().includes(filterValue.toLowerCase());
+  const loadTableData = async () => {
+    setIsLoadingTable(true);
+    try {
+      const params = new URLSearchParams({
+        filter: filter,
+        ...(filterValue && { search: filterValue }),
       });
-      setFilteredData(filtered);
-    } else {
-      setFilteredData(sourceData);
+      const response = await fetch(`/api/dashboard/table?${params}`);
+      const result = await response.json();
+      setFilteredData(result.data || []);
+    } catch (error) {
+      console.error('Error fetching table data:', error);
+      setFilteredData([]);
+    } finally {
+      setIsLoadingTable(false);
     }
   };
 
@@ -408,7 +376,7 @@ export default function DashboardPage() {
 
             <input
               type="text"
-              placeholder="Rechercher..."
+              placeholder="Rechercher... (recherche automatique après 0.5s)"
               className="input input-bordered flex-1 min-w-0"
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
@@ -424,9 +392,16 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div className="overflow-x-auto -mx-2 sm:-mx-4 sm:mx-0 w-full">
-            <table className="table table-zebra w-full text-xs sm:text-sm md:text-base min-w-full">
-              <thead>
+          {isLoadingTable && (
+            <div className="flex justify-center items-center py-8">
+              <span className="loading loading-spinner loading-lg"></span>
+              <span className="ml-4">Chargement des données...</span>
+            </div>
+          )}
+          {!isLoadingTable && (
+            <div className="overflow-x-auto -mx-2 sm:-mx-4 sm:mx-0 w-full">
+              <table className="table table-zebra w-full text-xs sm:text-sm md:text-base min-w-full">
+                <thead>
                 <tr className="whitespace-nowrap">
                   {filter === 'departement' && (
                     <>
@@ -679,7 +654,8 @@ export default function DashboardPage() {
                 Affichage des 100 premiers résultats sur {filteredData.length}
               </div>
             )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
